@@ -99,18 +99,15 @@ class StructuredModel(object):
             # we are not initialized yet
             return
 
-        if hasattr(self, 'n_labels'):
-            n_things = self.n_labels
-        else:
-            n_things = self.n_states
+        n_states = self.n_labels if hasattr(self, 'n_labels') else self.n_states
 
         if self.class_weight is not None:
 
-            if len(self.class_weight) != n_things:
+            if len(self.class_weight) != n_states:
                 raise ValueError("class_weight must have length n_states or"
                                  " be None")
             self.class_weight = np.array(self.class_weight)
             self.uniform_class_weight = False
         else:
-            self.class_weight = np.ones(n_things)
+            self.class_weight = np.ones(n_states)
             self.uniform_class_weight = True

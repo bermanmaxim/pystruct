@@ -199,6 +199,13 @@ def inference_ogm(unary_potentials, pairwise_potentials, edges,
     elif alg == 'fm':
         inference = opengm.inference.AlphaExpansionFusion(gm)
     elif alg == 'gc':
+        # check submodularity (Maxim)
+        assert n_states == 2, "Graph cuts is for binary labelling"
+        attractiveness = np.min(pairwise_potentials[:, 0, 0] + pairwise_potentials[:, 1, 1]
+                                - pairwise_potentials[:, 1, 0] - pairwise_potentials[:, 0, 1])
+        attract_eps = kwargs.get('attract_eps', 1.e-9)
+        if attractiveness < -attract_eps:
+            print("Warning: submodularity violation before Graph Cuts{}".format(attractiveness))
         inference = opengm.inference.GraphCut(gm)
     elif alg == 'loc':
         inference = opengm.inference.Loc(gm)

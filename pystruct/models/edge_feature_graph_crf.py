@@ -178,7 +178,6 @@ class EdgeFeatureGraphCRF(GraphCRF):
 
         else:
             y = y.reshape(n_nodes)
-            gx = np.ogrid[:n_nodes]
 
             #make one hot encoding
             unary_marginals = np.zeros((n_nodes, self.n_states), dtype=np.int)

@@ -98,6 +98,9 @@ def inference_dispatch(unary_potentials, pairwise_potentials, edges,
     elif inference_method == "max-product":
         return inference_max_product(unary_potentials, pairwise_potentials,
                                      edges, **kwargs)
+    elif inference_method == "custom":
+        return kwargs['alg'](unary_potentials, pairwise_potentials,
+                                     edges, return_energy=return_energy)
     else:
         raise ValueError("inference_method must be 'max-product', 'lp', 'ad3',"
                          " 'qpbo' or 'ogm', got %s" % inference_method)
@@ -113,7 +116,7 @@ def inference_ogm(unary_potentials, pairwise_potentials, edges,
     unary_potentials : nd-array, shape (n_nodes, n_states)
         Unary potentials of energy function.
 
-    pairwise_potentials : nd-array, shape (n_states, n_states) or (n_states, n_states, n_edges).
+    pairwise_potentials : nd-array, shape (n_states, n_states) or (n_edges, n_states, n_states).
         Pairwise potentials of energy function.
         If the first case, edge potentials are assumed to be the same for all edges.
         In the second case, the sequence needs to correspond to the edges.
@@ -198,14 +201,14 @@ def inference_ogm(unary_potentials, pairwise_potentials, edges,
         inference = opengm.inference.DynamicProgramming(gm)
     elif alg == 'fm':
         inference = opengm.inference.AlphaExpansionFusion(gm)
+    elif alg == 'bruteforce':
+        inference = opengm.inference.BruteForce(gm)
     elif alg == 'gc':
         # check submodularity (Maxim)
         assert n_states == 2, "Graph cuts is for binary labelling"
         attractiveness = np.min(pairwise_potentials[:, 0, 0] + pairwise_potentials[:, 1, 1]
                                 - pairwise_potentials[:, 1, 0] - pairwise_potentials[:, 0, 1])
-        attract_eps = kwargs.get('attract_eps', 1.e-9)
-        if attractiveness < -attract_eps:
-            print("Warning: submodularity violation before Graph Cuts{}".format(attractiveness))
+        assert attractiveness >= 0., "submodularity violation {}".format(attractiveness)
         inference = opengm.inference.GraphCut(gm)
     elif alg == 'loc':
         inference = opengm.inference.Loc(gm)
@@ -213,6 +216,8 @@ def inference_ogm(unary_potentials, pairwise_potentials, edges,
         inference = opengm.inference.Mqpbo(gm)
     elif alg == 'alphaexp':
         inference = opengm.inference.AlphaExpansion(gm)
+    else:
+        "unknown opengm algorithm {}".format(alg)
     if init is not None:
         inference.setStartingPoint(init)
 
